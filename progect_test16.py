@@ -47,26 +47,21 @@ def preprocess_data(df):
                           if word not in stop_words and word != ''])
     )
     
-    # Извлечение признаков из текста
     df['desc_length'] = df['clean_description'].apply(len)
     df['word_count'] = df['clean_description'].apply(lambda x: len(x.split()))
     
-    # Признаки из названия
     df['name'] = df['name'].fillna('')
     df['name_length'] = df['name'].apply(len)
     df['name_word_count'] = df['name'].apply(lambda x: len(x.split()))
     
-    # Признаки цены
     df['price'] = pd.to_numeric(df['price'], errors='coerce').fillna(df['price'].median())
     df['price_category'] = pd.cut(df['price'], bins=[0, 50, 100, 150, 200, np.inf], 
                                  labels=[0, 1, 2, 3, 4], include_lowest=True).astype(int)
     
-    # Бинарные признаки
     df['is_jacket'] = df['description'].str.contains('jacket', case=False).fillna(0).astype(int)
     df['has_zip'] = df['description'].str.contains('zip', case=False).fillna(0).astype(int)
     df['has_button'] = df['description'].str.contains('button', case=False).fillna(0).astype(int)
     
-    # Временные признаки
     df['scraped_at'] = pd.to_datetime(df['scraped_at'], errors='coerce')
     df['scrape_hour'] = df['scraped_at'].dt.hour.fillna(12)
     df['scrape_day'] = df['scraped_at'].dt.day.fillna(1)
@@ -83,7 +78,6 @@ class SalesPredictor(nn.Module):
     """
     def __init__(self, tabular_size, text_size):
         super().__init__()
-        # Блок для табличных данных
         self.tabular_block = nn.Sequential(
             nn.Linear(tabular_size, 256),
             nn.ReLU(),
@@ -93,7 +87,6 @@ class SalesPredictor(nn.Module):
             nn.Dropout(0.3)
         )
         
-        # Блок для текста
         self.text_block = nn.Sequential(
             nn.Linear(text_size, 256),
             nn.ReLU(),
@@ -103,7 +96,6 @@ class SalesPredictor(nn.Module):
             nn.Dropout(0.3)
         )
         
-        # Комбинированный блок
         self.combined = nn.Sequential(
             nn.Linear(256, 128),
             nn.ReLU(),
@@ -139,11 +131,9 @@ def prepare_features(df, vectorizer=None, preprocessor=None, fit=True):
     Возвращает: табличные признаки, текстовые признаки, целевую переменную, 
     обученный ColumnTransformer, обученный TfidfVectorizer.
     """
-    # Категориальные признаки
     cat_features = ['Product Position', 'Promotion', 'Product Category', 
                    'Seasonal', 'section', 'price_category']
     
-    # Числовые признаки
     num_features = ['price', 'desc_length', 'word_count', 'name_length', 
                    'name_word_count', 'is_jacket', 'has_zip', 'has_button',
                    'scrape_hour', 'scrape_day']
